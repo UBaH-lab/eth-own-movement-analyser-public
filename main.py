@@ -1,9 +1,4 @@
-"""Дипломный проект ТА7: анализ собственных движений фьючерса ETHUSDT.
-
-Приём цен ETH и BTC в реальном времени (WebSocket BingX), выделение
-собственных движений ETH бета-моделью, детектор движений в окне 60 минут
-с порогом 1%. Сигналы выводятся в консоль.
-"""
+"""Дипломный проект ТА7: анализ собственных движений фьючерса ETHUSDT."""
 
 import asyncio
 import logging
@@ -31,17 +26,18 @@ async def main() -> None:
     model.fit(eth_returns, btc_returns)
     logger.info("Бета = %.4f. Слежу за рынком.", model.beta)
 
-    detector = OwnMovementDetector(model, ETH, BTC,
-                                   window_minutes=60, threshold_pct=1.0)
+    detector = OwnMovementDetector(
+        model, ETH, BTC, window_minutes=60, threshold_pct=1.0,
+    )
 
-    async def on_trade(symbol: str, price: float) -> None:
-        # поток отдаёт каждую сделку — детектору нужна лишь последняя цена
+    def on_trade(symbol: str, price: float) -> None:
+        # обычная функция: поток не обязан знать, async колбэк или нет
         detector.on_price(symbol, price)
 
     stream = MarketDataStream([ETH, BTC], on_trade)
 
     async def minute_ticker() -> None:
-        """Раз в минуту (по границе минуты) закрывает минуту в детекторе."""
+        """Раз в минуту закрывает минуту в детекторе."""
         while True:
             await asyncio.sleep(60 - datetime.now(timezone.utc).second)
             signal = detector.on_minute_close()
