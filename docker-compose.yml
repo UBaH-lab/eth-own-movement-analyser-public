@@ -1,0 +1,5 @@
+services:
+  analyser:
+    build: .
+    container_name: eth-analyser
+    restart: unless-stopped   # упал/перезагрузился сервер — сам поднялся
